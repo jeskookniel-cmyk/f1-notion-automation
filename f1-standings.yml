@@ -1,0 +1,36 @@
+name: F1 Standings to Notion
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Daily at 03:20 UTC. Change this cron if you prefer another refresh time.
+    - cron: "20 3 * * *"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: f1-notion-standings
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+      - name: Sync F1 standings to Notion
+        env:
+          NOTION_TOKEN: ${{ secrets.NOTION_TOKEN }}
+          NOTION_PARENT_PAGE_ID: ${{ secrets.NOTION_PARENT_PAGE_ID }}
+          F1_SEASONS: ${{ vars.F1_SEASONS }}
+          NOTION_VERSION: ${{ vars.NOTION_VERSION }}
+        run: python f1_notion_sync.py
